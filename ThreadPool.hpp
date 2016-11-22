@@ -17,11 +17,15 @@
 #ifndef THREAD_POOL_HPP
 #define THREAD_POOL_HPP
 
+#include <iostream>
 #include <deque>
+#include <mutex>
 #include <vector>
 #include <thread>
 #include <future>
+#include <stdexcept>
 #include <functional>
+#include <condition_variable>
 
 // ----------------------------------------------------------------------------
 // Thread pool module decleration
@@ -34,7 +38,8 @@ public:
     virtual ~ThreadPool();
 
     template < class Func, class... Args >
-    auto addTask(Func&& func, Args&&... args) -> std::future<typename std::result_of<Func(Args...)>::type>;
+    auto addTask(Func&& func, Args&&... args)
+        -> std::future<typename std::result_of<Func(Args...)>::type>;
 
 private:
     typedef std::function<void()> Task;
@@ -42,9 +47,22 @@ private:
     typedef std::thread           Worker;
     typedef std::vector<Worker>   WorkersPool;
 
+    struct Shared
+    {
+        Shared() : run(true) {}
+
+        bool                    run;
+        TasksPool               tasks;
+        std::mutex              mutex;
+        std::condition_variable cond;
+    };
+
 private:
-    TasksPool   _tasks;
+    static void worker(size_t id, Shared & shared);
+
+private:
     WorkersPool _workers;
+    Shared      _shared;
 };
 
 // ----------------------------------------------------------------------------
@@ -53,20 +71,88 @@ private:
 
 ThreadPool::ThreadPool(size_t size)
 {
-    // TODO: Implement
+    for (size_t id = 0; id < size; id++)
+    {
+        _workers.emplace_back(worker, id, std::ref(_shared));
+    }
 }
 
 ThreadPool::~ThreadPool()
 {
-    // TODO: Implement
+    {
+        std::lock_guard<std::mutex> guard(_shared.mutex);
+
+        _shared.run = false;
+        _shared.cond.notify_all();
+    }
+
+    for (Worker & w : _workers)
+    {
+        w.join();
+    }
 }
 
 template < class Func, class... Args >
 auto ThreadPool::addTask(Func&& func, Args&&... args) -> std::future<typename std::result_of<Func(Args...)>::type>
 {
-    // TODO: Implement
-    // NOTE: Running as deferred to fail red-to-green tests (execute on a different thread id)
-    return std::async(std::launch::deferred, std::forward<Func>(func), std::forward<Args>(args)...);
+    using result_type = typename std::result_of<Func(Args...)>::type;
+
+    std::lock_guard<std::mutex> guard(_shared.mutex);
+
+    if (!_shared.run)
+    {
+        throw std::runtime_error("Can't add tasks when not running");
+    }
+
+    auto task = std::make_shared<std::packaged_task<result_type()>>(std::bind(std::forward<Func>(func), std::forward<Args>(args)...));
+    _shared.tasks.emplace_back([task]() { (*task)(); });
+    auto result = task->get_future();
+
+    if (_shared.tasks.size() == 1)
+    {
+        _shared.cond.notify_one();
+    }
+
+    return result;
+}
+
+void ThreadPool::worker(size_t id, Shared & shared)
+{
+    // Use a unique lock as we're going to wait on a cond using it
+    std::unique_lock<std::mutex> lock(shared.mutex);
+
+    while (true)
+    {
+        if (shared.tasks.empty())
+        {
+            // Stop if requested
+            if (!shared.run)
+            {
+                lock.unlock();
+                break;
+            }
+
+            while (shared.run && shared.tasks.empty())
+            {
+                shared.cond.wait(lock);
+            }
+
+            // Because many things could've happened while sleeping
+            // after waking up we restart the entire cycle, this way
+            // we can detect stop requests and make sure there are still
+            // tasks in the queue
+            continue;
+        }
+
+        // Get the first task
+        Task task = std::move(shared.tasks.front());
+        shared.tasks.pop_front();
+
+        // Do actual work while lock not owned
+        lock.unlock();
+        task();
+        lock.lock();
+    }
 }
 
 #endif // THREAD_POOL_HPP
