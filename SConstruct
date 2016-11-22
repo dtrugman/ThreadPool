@@ -22,3 +22,11 @@ example_app = 'Example.out'
 
 env.Program(target = example_app,
             source = example_files)
+# -----------------------------------------------------------------------------
+# Build tests
+# -----------------------------------------------------------------------------
+test_files = [ 'TestMain.cpp', 'Test.cpp' ]
+test_app = 'Test.out'
+
+env.Program(target = test_app,
+            source = test_files)
