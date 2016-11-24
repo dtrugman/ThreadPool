@@ -8,6 +8,11 @@
 
 using namespace std;
 
+static const size_t SMALL_POOL_SIZE = 2;
+static const size_t REGULAR_POOL_SIZE = 5;
+static const size_t LARGE_POOL_SIZE = 20;
+static const size_t XLARGE_POOL_SIZE = 100;
+
 uint64_t getTid()
 {
     std::stringstream ss;
@@ -19,7 +24,7 @@ TEST_CASE("Basic test", "[sanity]")
 {
     uint64_t myTid = getTid();
 
-    ThreadPool tp(2);
+    ThreadPool tp(SMALL_POOL_SIZE);
 
     SECTION("Different execution thread")
     {
@@ -55,8 +60,7 @@ TEST_CASE("Load test", "[load]")
 {
     SECTION("Standard size pool")
     {
-        static const size_t workersCount = 5;
-        ThreadPool tp(workersCount);
+        ThreadPool tp(REGULAR_POOL_SIZE);
 
         SECTION("Execute 1,000 small tasks")
         {
@@ -71,8 +75,7 @@ TEST_CASE("Load test", "[load]")
 
     SECTION("Very large pool")
     {
-        static const size_t workersCount = 100;
-        ThreadPool tp(workersCount);
+        ThreadPool tp(XLARGE_POOL_SIZE);
 
         SECTION("Execute 1,000 small tasks")
         {
