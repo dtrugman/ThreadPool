@@ -17,6 +17,7 @@ cout << f2.get() << endl;
 ```
 
 By taking full advantage of cpp11, this design is very generic:
+
 1. Tasks can have any method prototype
 2. We can use the return values from the tasks using future wrappers
 
