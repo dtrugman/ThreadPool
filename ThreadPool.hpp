@@ -123,35 +123,39 @@ void ThreadPool::worker(size_t id, Shared & shared)
 
     while (true)
     {
-        if (shared.tasks.empty())
+        // Work if there are tasks in the pool
+
+        if (!shared.tasks.empty())
         {
-            // Stop if requested
-            if (!shared.run)
-            {
-                lock.unlock();
-                break;
-            }
+            // Get the first task
 
-            while (shared.run && shared.tasks.empty())
-            {
-                shared.cond.wait(lock);
-            }
+            Task task = std::move(shared.tasks.front());
+            shared.tasks.pop_front();
 
-            // Because many things could've happened while sleeping
-            // after waking up we restart the entire cycle, this way
-            // we can detect stop requests and make sure there are still
-            // tasks in the queue
+            // Do actual work
+            // IMPORTANT! Must NOT hold lock while working
+
+            lock.unlock();
+            task();
+            lock.lock();
+
             continue;
         }
 
-        // Get the first task
-        Task task = std::move(shared.tasks.front());
-        shared.tasks.pop_front();
+        // Stop if required
 
-        // Do actual work while lock not owned
-        lock.unlock();
-        task();
-        lock.lock();
+        if (!shared.run)
+        {
+            // IMPORTANT! Must NOT hold lock after stopped
+
+            lock.unlock();
+            break;
+        }
+
+        // Wait until new tasks are populated or the running state has changed
+
+        shared.cond.wait(lock,
+            [&shared](){ return !shared.run || !shared.tasks.empty(); });
     }
 }
 
