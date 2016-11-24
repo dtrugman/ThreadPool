@@ -100,6 +100,12 @@ void ThreadPool::stop(bool immediate)
     {
         std::lock_guard<std::mutex> guard(_shared.mutex);
 
+        // Not running, do nothing
+        if (!_shared.run)
+        {
+            return;
+        }
+
         if (immediate)
         {
             _shared.tasks.clear();
