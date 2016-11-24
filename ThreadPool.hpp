@@ -51,8 +51,6 @@ private:
 
     struct Shared
     {
-        Shared() : run(true) {}
-
         bool                    run;
         TasksPool               tasks;
         std::mutex              mutex;
