@@ -37,6 +37,8 @@ public:
     ThreadPool(size_t size);
     virtual ~ThreadPool();
 
+    void stop(bool immediate = true);
+
     template < class Func, class... Args >
     auto addTask(Func&& func, Args&&... args)
         -> std::future<typename std::result_of<Func(Args...)>::type>;
@@ -71,16 +73,37 @@ private:
 
 ThreadPool::ThreadPool(size_t size)
 {
-    for (size_t id = 0; id < size; id++)
+    try
     {
-        _workers.emplace_back(worker, id, std::ref(_shared));
+        _shared.run = true;
+
+        for (size_t id = 0; id < size; id++)
+        {
+            _workers.emplace_back(worker, id, std::ref(_shared));
+        }
+    }
+    catch(std::exception & ex)
+    {
+        stop(true);
+
+        throw ex;
     }
 }
 
 ThreadPool::~ThreadPool()
 {
+    stop(false);
+}
+
+void ThreadPool::stop(bool immediate)
+{
     {
         std::lock_guard<std::mutex> guard(_shared.mutex);
+
+        if (immediate)
+        {
+            _shared.tasks.clear();
+        }
 
         _shared.run = false;
         _shared.cond.notify_all();
