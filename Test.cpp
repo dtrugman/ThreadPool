@@ -35,3 +35,53 @@ TEST_CASE("Basic test", "[sanity]")
         REQUIRE(result == RESULT);
     }
 }
+
+void testSmallTasksExecution(ThreadPool & tp, size_t tasksCount)
+{
+    uint8_t result[tasksCount] = { 0 };
+
+    for (size_t i = 0; i < tasksCount; i++)
+    {
+        tp.addTask([&result, i]() { result[i] = (uint8_t)i; }).get();
+    }
+
+    for (size_t i = 0; i < tasksCount; i++)
+    {
+        REQUIRE(result[i] == (uint8_t)i);
+    }
+}
+
+TEST_CASE("Load test", "[load]")
+{
+    SECTION("Standard size pool")
+    {
+        static const size_t workersCount = 5;
+        ThreadPool tp(workersCount);
+
+        SECTION("Execute 1,000 small tasks")
+        {
+            testSmallTasksExecution(tp, 1000);
+        }
+
+        SECTION("Execute 100,000 small tasks")
+        {
+            testSmallTasksExecution(tp, 100000);
+        }
+    }
+
+    SECTION("Very large pool")
+    {
+        static const size_t workersCount = 100;
+        ThreadPool tp(workersCount);
+
+        SECTION("Execute 1,000 small tasks")
+        {
+            testSmallTasksExecution(tp, 1000);
+        }
+
+        SECTION("Execute 100,000 small tasks")
+        {
+            testSmallTasksExecution(tp, 100000);
+        }
+    }
+}
