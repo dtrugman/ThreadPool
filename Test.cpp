@@ -90,3 +90,69 @@ TEST_CASE("Load test", "[load]")
         }
     }
 }
+
+TEST_CASE("Graceful/Immediate stop tests", "[algorithm]")
+{
+    // Use smallets pool size in order for the workers not to finish the job
+    // before the stop/d'tor is called
+
+    size_t workersCount = SMALL_POOL_SIZE;
+    size_t tasksCount = 10000;
+
+    uint8_t result[tasksCount] = { 0 };
+
+    bool expectAllSuccessful;
+
+    SECTION("Graceful destruction")
+    {
+        // This scope will allow the tasks to execute before
+        // continuing to the actual REQUIRE clauses
+        {
+            ThreadPool tp(workersCount);
+
+            for (size_t i = 0; i < tasksCount; i++)
+            {
+                tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
+            }
+        }
+
+        expectAllSuccessful = true;
+    }
+
+    SECTION("Graceful stop")
+    {
+        ThreadPool tp(workersCount);
+
+        for (size_t i = 0; i < tasksCount; i++)
+        {
+            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
+        }
+
+        tp.stop(false);
+
+        expectAllSuccessful = true;
+    }
+
+    SECTION("Immediate stop")
+    {
+        ThreadPool tp(workersCount);
+
+        for (size_t i = 0; i < tasksCount; i++)
+        {
+            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
+        }
+
+        tp.stop(true);
+
+        expectAllSuccessful = false;
+    }
+
+    bool allSuccessful = true;
+
+    for (size_t i = 0; i < tasksCount; i++)
+    {
+        allSuccessful &= (result[i] == (uint8_t)i);
+    }
+
+    REQUIRE(allSuccessful == expectAllSuccessful);
+}
