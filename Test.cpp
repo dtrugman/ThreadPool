@@ -41,13 +41,19 @@ TEST_CASE("Basic test", "[sanity]")
     }
 }
 
-void testSmallTasksExecution(ThreadPool & tp, size_t tasksCount)
+void testSmallTasksExecution(size_t workersCount, size_t tasksCount)
 {
     uint8_t result[tasksCount] = { 0 };
 
-    for (size_t i = 0; i < tasksCount; i++)
+    // This scope will allow the tasks to execute before
+    // continuing to the actual REQUIRE clauses
     {
-        tp.addTask([&result, i]() { result[i] = (uint8_t)i; }).get();
+        ThreadPool tp(workersCount);
+
+        for (size_t i = 0; i < tasksCount; i++)
+        {
+            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
+        }
     }
 
     for (size_t i = 0; i < tasksCount; i++)
@@ -60,31 +66,27 @@ TEST_CASE("Load test", "[load]")
 {
     SECTION("Standard size pool")
     {
-        ThreadPool tp(REGULAR_POOL_SIZE);
-
         SECTION("Execute 1,000 small tasks")
         {
-            testSmallTasksExecution(tp, 1000);
+            testSmallTasksExecution(REGULAR_POOL_SIZE, 1000);
         }
 
         SECTION("Execute 100,000 small tasks")
         {
-            testSmallTasksExecution(tp, 100000);
+            testSmallTasksExecution(XLARGE_POOL_SIZE, 100000);
         }
     }
 
     SECTION("Very large pool")
     {
-        ThreadPool tp(XLARGE_POOL_SIZE);
-
         SECTION("Execute 1,000 small tasks")
         {
-            testSmallTasksExecution(tp, 1000);
+            testSmallTasksExecution(REGULAR_POOL_SIZE, 1000);
         }
 
         SECTION("Execute 100,000 small tasks")
         {
-            testSmallTasksExecution(tp, 100000);
+            testSmallTasksExecution(XLARGE_POOL_SIZE, 100000);
         }
     }
 }
