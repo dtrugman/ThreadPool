@@ -17,7 +17,6 @@
 #ifndef THREAD_POOL_HPP
 #define THREAD_POOL_HPP
 
-#include <iostream>
 #include <deque>
 #include <mutex>
 #include <vector>
