@@ -2,6 +2,9 @@
 
 This project is a simple yet powerful and generic implementation of a thread pool in cpp11.
 
+Build status: 
+![TravisCI](https://travis-ci.org/dtrugman/ThreadPool.svg?branch=master)
+
 ## Code Example
 
 The following snippet is the simplest usage possible:
