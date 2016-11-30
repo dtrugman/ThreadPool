@@ -17,6 +17,7 @@
 #include <sstream>
 #include <thread>
 #include <functional>
+#include <cstring>
 
 #include "catch.hpp"
 
@@ -57,25 +58,39 @@ TEST_CASE("Basic test", "[sanity]")
     }
 }
 
-void testSmallTasksExecution(size_t workersCount, size_t tasksCount)
+void addFillArrayTasks(ThreadPool & tp, uint8_t * arr, size_t size)
 {
-    uint8_t result[tasksCount] = { 0 };
+    for (size_t i = 0; i < size; i++)
+    {
+        tp.addTask([arr, i]() { arr[i] = (uint8_t)i; });
+    }
+}
+
+bool arrayFull(uint8_t * arr, size_t size)
+{
+    bool retval = true;
+
+    for (size_t i = 0; retval && i < size; i++)
+    {
+        retval &= (arr[i] == (uint8_t)i);
+    }
+
+    return retval;
+}
+
+void fillArrayTest(size_t workersCount, size_t tasksCount)
+{
+    uint8_t arr[tasksCount];
 
     // This scope will allow the tasks to execute before
     // continuing to the actual REQUIRE clauses
     {
         ThreadPool tp(workersCount);
 
-        for (size_t i = 0; i < tasksCount; i++)
-        {
-            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
-        }
+        addFillArrayTasks(tp, arr, sizeof(arr));
     }
 
-    for (size_t i = 0; i < tasksCount; i++)
-    {
-        REQUIRE(result[i] == (uint8_t)i);
-    }
+    REQUIRE(arrayFull(arr, sizeof(arr)));
 }
 
 TEST_CASE("Load test", "[load]")
@@ -84,12 +99,12 @@ TEST_CASE("Load test", "[load]")
     {
         SECTION("Execute 1,000 small tasks")
         {
-            testSmallTasksExecution(REGULAR_POOL_SIZE, 1000);
+            fillArrayTest(REGULAR_POOL_SIZE, 1000);
         }
 
         SECTION("Execute 100,000 small tasks")
         {
-            testSmallTasksExecution(XLARGE_POOL_SIZE, 100000);
+            fillArrayTest(XLARGE_POOL_SIZE, 100000);
         }
     }
 
@@ -97,12 +112,12 @@ TEST_CASE("Load test", "[load]")
     {
         SECTION("Execute 1,000 small tasks")
         {
-            testSmallTasksExecution(REGULAR_POOL_SIZE, 1000);
+            fillArrayTest(REGULAR_POOL_SIZE, 1000);
         }
 
         SECTION("Execute 100,000 small tasks")
         {
-            testSmallTasksExecution(XLARGE_POOL_SIZE, 100000);
+            fillArrayTest(XLARGE_POOL_SIZE, 100000);
         }
     }
 }
@@ -112,12 +127,9 @@ TEST_CASE("Graceful/Immediate stop tests", "[algorithm]")
     // Use smallets pool size in order for the workers not to finish the job
     // before the stop/d'tor is called
 
+    uint8_t arr[10000];
+
     size_t workersCount = SMALL_POOL_SIZE;
-    size_t tasksCount = 10000;
-
-    uint8_t result[tasksCount] = { 0 };
-
-    bool expectAllSuccessful;
 
     SECTION("Graceful destruction")
     {
@@ -126,49 +138,31 @@ TEST_CASE("Graceful/Immediate stop tests", "[algorithm]")
         {
             ThreadPool tp(workersCount);
 
-            for (size_t i = 0; i < tasksCount; i++)
-            {
-                tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
-            }
+            addFillArrayTasks(tp, arr, sizeof(arr));
         }
 
-        expectAllSuccessful = true;
+        REQUIRE(arrayFull(arr, sizeof(arr)));
     }
 
     SECTION("Graceful stop")
     {
         ThreadPool tp(workersCount);
 
-        for (size_t i = 0; i < tasksCount; i++)
-        {
-            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
-        }
+        addFillArrayTasks(tp, arr, sizeof(arr));
 
         tp.stop(false);
 
-        expectAllSuccessful = true;
+        REQUIRE(arrayFull(arr, sizeof(arr)));
     }
 
     SECTION("Immediate stop")
     {
         ThreadPool tp(workersCount);
 
-        for (size_t i = 0; i < tasksCount; i++)
-        {
-            tp.addTask([&result, i]() { result[i] = (uint8_t)i; });
-        }
+        addFillArrayTasks(tp, arr, sizeof(arr));
 
         tp.stop(true);
 
-        expectAllSuccessful = false;
+        REQUIRE(!arrayFull(arr, sizeof(arr)));
     }
-
-    bool allSuccessful = true;
-
-    for (size_t i = 0; i < tasksCount; i++)
-    {
-        allSuccessful &= (result[i] == (uint8_t)i);
-    }
-
-    REQUIRE(allSuccessful == expectAllSuccessful);
 }
