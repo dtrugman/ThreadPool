@@ -18,7 +18,7 @@
 env=Environment(CPPPATH = '',
                 CPPDEFINES = [],
                 LIBS = [ 'pthread' ],
-                CXXFLAGS = "-std=c++11")
+                CXXFLAGS = [ '-std=c++11' ])
 
 # -----------------------------------------------------------------------------
 # Build flags
@@ -26,17 +26,17 @@ env=Environment(CPPPATH = '',
 
 # Default values
 DEFAULT_DEBUG = 0 # Debugging off
-DEFAULT_COMPILER = 'g++' # gcc
 
 # Debug flag
 debug = ARGUMENTS.get('debug', DEFAULT_DEBUG)
 if int(debug):
-   env.Append(CXXFLAGS = ' -g')
+    env.Append(CXXFLAGS = [ '-g' ])
 
 # Compiler flag
-compiler = ARGUMENTS.get('cxx', DEFAULT_COMPILER)
-print("Using compiler: " + compiler)
-env.Replace(CXX = compiler)
+compiler = ARGUMENTS.get('cxx', "")
+if compiler:
+    env.Replace(CXX = compiler)
+print("Compiling using: " + env['CXX'])
 
 # -----------------------------------------------------------------------------
 # Build example
