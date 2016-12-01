@@ -30,3 +30,7 @@
 
 # SCons files
 .sconsign.dblite
+
+# Output files
+Example
+Test
