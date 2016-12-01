@@ -24,4 +24,4 @@ matrix:
 
 script:
   - scons cxx=$COMPILER
-  - ./Test.out
+  - scons test cxx=$COMPILER
