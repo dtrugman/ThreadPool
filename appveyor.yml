@@ -1,0 +1,50 @@
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+
+# version format
+version: 0.1.{build}
+
+# Maximum number of concurrent jobs for the project
+max_jobs: 1
+
+# environment variables
+environment:
+  PYTHON: "C:\\Python27"
+
+install:
+  - SET "PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+  - easy_install scons
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+
+# build platform, i.e. x86, x64, Any CPU. This setting is optional.
+platform:
+  - x86
+  - x64
+
+# build Configuration, i.e. Debug, Release, etc.
+configuration:
+  - Debug
+  - Release
+
+build: off
+
+# scripts to run before build
+before_build:
+  - python --version
+  - scons --version
+
+# to run your custom scripts instead of automatic MSBuild
+build_script:
+  - scons
+
+#---------------------------------#
+#       tests configuration       #
+#---------------------------------#
+
+# to run your custom scripts instead of automatic tests
+test_script:
+  - scons test

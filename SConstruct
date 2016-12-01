@@ -12,13 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import platform
+
 # -----------------------------------------------------------------------------
 # Set environment
 # -----------------------------------------------------------------------------
 env=Environment(CPPPATH = '',
                 CPPDEFINES = [],
-                LIBS = [ 'pthread' ],
-                CXXFLAGS = [ '-std=c++11' ])
+                LIBS = [],
+                CXXFLAGS = [])
+
+platform = platform.system()
+print("Compiling on: " + platform)
+
+if platform == 'Linux':
+    env.Append(LIBS = [ 'pthread' ])
+    env.Append(CXXFLAGS = [ '-std=c++11' ])
 
 # -----------------------------------------------------------------------------
 # Build flags
