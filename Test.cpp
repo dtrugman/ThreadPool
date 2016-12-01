@@ -80,7 +80,8 @@ bool arrayFull(uint8_t * arr, size_t size)
 
 void fillArrayTest(size_t workersCount, size_t tasksCount)
 {
-    uint8_t arr[tasksCount];
+    uint8_t * arr = new uint8_t[tasksCount];
+    REQUIRE(arr != NULL);
 
     // This scope will allow the tasks to execute before
     // continuing to the actual REQUIRE clauses
@@ -90,7 +91,11 @@ void fillArrayTest(size_t workersCount, size_t tasksCount)
         addFillArrayTasks(tp, arr, sizeof(arr));
     }
 
-    REQUIRE(arrayFull(arr, sizeof(arr)));
+    bool full = arrayFull(arr, sizeof(arr));
+ 
+    delete [] arr;
+
+    REQUIRE(full);
 }
 
 TEST_CASE("Load test", "[load]")
