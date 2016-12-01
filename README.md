@@ -2,8 +2,11 @@
 
 This project is a simple yet powerful and generic implementation of a thread pool in cpp11.
 
-Build status: 
+Linux: 
 ![TravisCI](https://travis-ci.org/dtrugman/ThreadPool.svg?branch=master)
+
+Windows:
+![AppVeyor](https://ci.appveyor.com/api/projects/status/yr5yagayu006a8eq/branch/master?svg=true)
 
 ## Code Example
 
