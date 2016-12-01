@@ -44,13 +44,21 @@ env.Replace(CXX = compiler)
 example_files = [ 'Example.cpp' ]
 example_app = 'Example'
 
-env.Program(target = example_app,
-            source = example_files)
+example = env.Program(  target = example_app,
+                        source = example_files)
+
+example_alias = Alias('example', [example], example[0].abspath)
+AlwaysBuild(example_alias)
+
 # -----------------------------------------------------------------------------
 # Build tests
 # -----------------------------------------------------------------------------
 test_files = [ 'TestMain.cpp', 'Test.cpp' ]
 test_app = 'Test'
 
-env.Program(target = test_app,
-            source = test_files)
+test = env.Program( target = test_app,
+                    source = test_files)
+
+test_alias = Alias('test', [test], test[0].abspath)
+AlwaysBuild(test_alias)
+

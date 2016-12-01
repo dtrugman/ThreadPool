@@ -28,9 +28,13 @@ By taking full advantage of cpp11, this design is very generic:
 
 Just add ThreadPool.hpp to your project and compile using c++11 or newer.
 
+## Compilation
+
+Just run 'scons'
+
 ## Tests
 
-Just compile and run ./Test.out
+Just run 'scons test'
 
 ## License
 
