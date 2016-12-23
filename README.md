@@ -20,6 +20,9 @@ auto f2 = tp.addTask([](int x) { return x * x; }, 7);
 
 cout << f1.get() << endl;
 cout << f2.get() << endl;
+
+tp.stop(true); // immediately stops thread pool (every worker finishes current task and terminates)
+// tp.stop(false) and ThreadPool's d'tor stop the thread pool gracefully, allowing all tasks to complete
 ```
 
 By taking full advantage of cpp11, this design is very generic:
@@ -34,6 +37,11 @@ Just add ThreadPool.hpp to your project and compile using c++11 or newer.
 ## Compilation
 
 Just run 'scons'
+
+Compilation options:
+
+- Append 'debug=1' to compile in debug mode
+- Append 'cxx=compiler' to specifically choose compiler (e.g. cxx=g++-5)
 
 ## Tests
 
